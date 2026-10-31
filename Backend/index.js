@@ -16,14 +16,22 @@ const app = express();
 app.use(express.json());
 app.use(cookieParser());
 app.use(express.urlencoded({ extended: true }));
-const allowedOrigins = [
-  process.env.FRONTEND_URL?.replace(/\/$/, ''),
-  'http://localhost:5173',
-].filter(Boolean);
 
 app.use(cors({
   origin: function (origin, callback) {
-    if (!origin || allowedOrigins.includes(origin.replace(/\/$/, ''))) {
+    // Allow no-origin requests (mobile, curl, Postman)
+    if (!origin) return callback(null, true);
+
+    const cleanOrigin = origin.replace(/\/$/, '');
+    const cleanFrontend = (process.env.FRONTEND_URL || '').replace(/\/$/, '');
+
+    const allowed =
+      cleanOrigin === cleanFrontend ||
+      cleanOrigin.endsWith('.vercel.app') ||
+      cleanOrigin === 'http://localhost:5173' ||
+      cleanOrigin === 'http://localhost:3000';
+
+    if (allowed) {
       callback(null, true);
     } else {
       callback(new Error('Not allowed by CORS'));
